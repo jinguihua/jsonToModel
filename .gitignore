@@ -7,6 +7,10 @@
 *.dll
 *.so
 *.dylib
+*.dart
+jsonToModel
+myjson.json
+.idea
 
 # Test binary, built with `go test -c`
 *.test
