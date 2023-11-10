@@ -9,7 +9,7 @@
 *.dylib
 *.dart
 jsonToModel
-myjson.json
+*.json
 .idea
 
 # Test binary, built with `go test -c`

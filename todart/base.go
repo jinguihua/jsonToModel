@@ -1,10 +1,10 @@
 package todart
 
 import (
-	"encoding/json"
-	"fmt"
+	"github.com/any-call/gobase/util/myjson"
 	"github.com/any-call/gobase/util/myos"
 	"github.com/any-call/gobase/util/mystr"
+	"math"
 	"os"
 	"reflect"
 	"strings"
@@ -17,28 +17,39 @@ type Field struct {
 }
 
 func jsonToModel(jsonStr string) (ret []Field, err error) {
-	var jsonModel any
-	if err := json.NewDecoder(strings.NewReader(jsonStr)).Decode(&jsonModel); err != nil {
+	listValue, err := myjson.ToOrderMap(jsonStr)
+	if err != nil {
 		return nil, err
 	}
 
-	mapModel, ok := jsonModel.(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("入参必须是一个map")
-	}
-
-	ret = make([]Field, 0, len(mapModel))
-	for k, v := range mapModel {
-		field := Field{Name: mystr.ToProperty(k), Value: v}
-		t := reflect.TypeOf(v)
+	ret = make([]Field, 0, len(listValue))
+	for _, mapV := range listValue {
+		field := Field{Name: mystr.ToProperty(mapV.Key), Value: mapV.Value}
+		t := reflect.TypeOf(mapV.Value)
 		switch t.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 			field.Type = "int?"
 			break
 
-		case reflect.Float32, reflect.Float64:
-			field.Type = "double?"
+		case reflect.Float32:
+			{
+				if mapV.Value == math.Trunc(mapV.Value.(float64)) {
+					field.Type = "int?"
+				} else {
+					field.Type = "float?"
+				}
+			}
+			break
+
+		case reflect.Float64:
+			{
+				if mapV.Value == math.Trunc(mapV.Value.(float64)) {
+					field.Type = "int?"
+				} else {
+					field.Type = "double?"
+				}
+			}
 			break
 
 		case reflect.String:

@@ -34,6 +34,7 @@ func (self *TempModel) ToCode() string {
 		self.genOptEquFun(),
 		self.genHashCodeFun(),
 		self.genFromMapFun(),
+		self.genToJsonFun(),
 		self.genToMapFun(),
 	)
 }
@@ -42,7 +43,7 @@ func (self *TempModel) genFieldDef() string {
 	var ret string
 	for i, field := range self.listField {
 		if (i + 1) == len(self.listField) { //最后一个
-			ret += fmt.Sprintf("	%s %s ;\n", field.Type, field.Name)
+			ret += fmt.Sprintf("	%s %s ;", field.Type, field.Name)
 		} else if i == 0 {
 			ret += fmt.Sprintf("%s %s ;\n", field.Type, field.Name)
 		} else {
@@ -156,44 +157,51 @@ func (self *TempModel) genFromMapFun() string {
 	var ret string
 	for i, field := range self.listField {
 		if (i + 1) == len(self.listField) { //最后一个
-			ret += fmt.Sprintf("	%s: map['%s'] as  %s,", field.Name, field.Name, field.Type)
+			ret += fmt.Sprintf("	    %s: map['%s'] as  %s,", field.Name, field.Name, field.Type)
+		} else if i == 0 {
+			ret += fmt.Sprintf("	%s: map['%s'] as  %s,\n", field.Name, field.Name, field.Type)
 		} else {
-			ret += fmt.Sprintf("	%s: map['%s'] as  %s, \n", field.Name, field.Name, field.Type)
+			ret += fmt.Sprintf("	    %s: map['%s'] as  %s,\n", field.Name, field.Name, field.Type)
 		}
-
 	}
 
-	return fmt.Sprintf(`
-  factory %s.fromMap(Map<String?, dynamic> map) {
+	return fmt.Sprintf(`factory %s.fromMap(Map<String?, dynamic> map) {
     return new %s(
-       %s 
+    %s 
 	);
-  }
+ }
 `, self.className, self.className, ret)
+}
+
+func (self *TempModel) genToJsonFun() string {
+	return fmt.Sprintf(`String toJson() => json.encode(toMap());`)
 }
 
 func (self *TempModel) genToMapFun() string {
 	var ret string
 	for i, field := range self.listField {
 		if (i + 1) == len(self.listField) { //最后一个
-			ret += fmt.Sprintf("	'%s': this.%s,", field.Name, field.Name)
+			ret += fmt.Sprintf("      '%s': this.%s,", field.Name, field.Name)
+		} else if i == 0 {
+			ret += fmt.Sprintf("'%s': this.%s,\n", field.Name, field.Name)
 		} else {
-			ret += fmt.Sprintf("	'%s': this.%s, \n", field.Name, field.Name)
+			ret += fmt.Sprintf("      '%s': this.%s,\n", field.Name, field.Name)
 		}
 
 	}
 
-	return fmt.Sprintf(`
-  Map<String, dynamic> toMap() {
+	return fmt.Sprintf(`Map<String, dynamic> toMap() {
     // ignore: unnecessary_cast
-    return {
-       %s
+   return {
+      %s
      } as Map<String, dynamic>;
   }
 `, ret)
 }
 
 const template = `
+import 'dart:convert';
+
 class %s {
   //field define 
   %s
@@ -209,15 +217,17 @@ class %s {
 
 //operation == function
  %s
- 
+
 //get hasCode function
 %s
 
 //fromMap function
 %s
 
-//Map function
+//toJson function
 %s
 
+//toMap function
+%s
 }
 `
