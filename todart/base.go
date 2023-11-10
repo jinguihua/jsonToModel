@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/any-call/gobase/util/myos"
+	"github.com/any-call/gobase/util/mystr"
 	"os"
 	"reflect"
 	"strings"
@@ -28,7 +29,7 @@ func jsonToModel(jsonStr string) (ret []Field, err error) {
 
 	ret = make([]Field, 0, len(mapModel))
 	for k, v := range mapModel {
-		field := Field{Name: k, Value: v}
+		field := Field{Name: mystr.ToProperty(k), Value: v}
 		t := reflect.TypeOf(v)
 		switch t.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
@@ -49,7 +50,7 @@ func jsonToModel(jsonStr string) (ret []Field, err error) {
 			break
 
 		case reflect.Map:
-			field.Type = "map?"
+			field.Type = "Map?"
 			break
 
 		case reflect.Slice, reflect.Array:
@@ -60,6 +61,8 @@ func jsonToModel(jsonStr string) (ret []Field, err error) {
 			field.Type = "Object?"
 			break
 		}
+
+		ret = append(ret, field)
 	}
 
 	return ret, nil
@@ -71,19 +74,8 @@ func GenModel(destFile string, jsonStr string) error {
 		return err
 	}
 
-	ClassName := myos.Filename(destFile)
-
-	// 生成Dart类定义
-	classDef := fmt.Sprintf("class %s {\n", ClassName)
-
-	// 生成字段定义
-	fieldDefs := ""
-	for _, field := range listField {
-		fieldDefs += fmt.Sprintf("  %s %s;\n", field.Name, field.Type)
-	}
-
-	// 合并类定义和字段定义
-	dartCode := classDef + fieldDefs + "}"
-
-	return os.WriteFile(destFile, []byte(dartCode), 0777)
+	fileNameSlice := strings.Split(myos.Filename(destFile), ".")
+	ClassName := fileNameSlice[0]
+	dartModel := NewTempModel(mystr.ToTitle(ClassName), listField)
+	return os.WriteFile(destFile, []byte(dartModel.ToCode()), 0777)
 }
