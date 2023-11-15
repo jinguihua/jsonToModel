@@ -4,6 +4,8 @@ import (
 	"github.com/any-call/gobase/util/myjson"
 	"github.com/any-call/gobase/util/myos"
 	"github.com/any-call/gobase/util/mystr"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"math"
 	"os"
 	"reflect"
@@ -24,7 +26,10 @@ func jsonToModel(jsonStr string) (ret []Field, err error) {
 
 	ret = make([]Field, 0, len(listValue))
 	for _, mapV := range listValue {
-		field := Field{Name: mystr.ToProperty(mapV.Key), Value: mapV.Value}
+		mapV.Key = mystr.ToFirstLower(cases.Title(language.English, cases.NoLower).
+			String(strings.Join(strings.Fields(mapV.Key), "")))
+
+		field := Field{Name: mapV.Key, Value: mapV.Value}
 		t := reflect.TypeOf(mapV.Value)
 		switch t.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
@@ -87,6 +92,15 @@ func GenModel(destFile string, jsonStr string) error {
 
 	fileNameSlice := strings.Split(myos.Filename(destFile), ".")
 	ClassName := fileNameSlice[0]
-	dartModel := NewTempModel(mystr.ToTitle(ClassName), listField)
-	return os.WriteFile(destFile, []byte(dartModel.ToCode()), 0777)
+	dartModel, err := NewTempModel(mystr.ToTitle(ClassName), listField)
+	if err != nil {
+		return err
+	}
+
+	dartInfo, err := dartModel.ToCode()
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(destFile, []byte(dartInfo), 0777)
 }

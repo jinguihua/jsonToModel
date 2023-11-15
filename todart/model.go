@@ -1,42 +1,70 @@
 package todart
 
 import (
+	_ "embed"
 	"fmt"
+	"strings"
+	"text/template"
 )
 
-const (
-	keyClassName      = "${ClassName}"
-	keyFieldsDef      = "${FieldDefine}"
-	keyConstructParam = "$Construct param"
-	KeyCopyWithParam  = "$copyWith param"
-	KeyCopyWithReturn = "$copyWith return"
-)
+//go:embed temp.tpl
+var tplFS string
 
 type TempModel struct {
+	*template.Template
 	className string
 	listField []Field
 }
 
-func NewTempModel(clsName string, fields []Field) *TempModel {
+func NewTempModel(clsName string, fields []Field) (*TempModel, error) {
+	tpl, err := template.New(clsName).Parse(tplFS)
+	if err != nil {
+		return nil, err
+	}
+
 	return &TempModel{
+		Template:  tpl,
 		className: clsName,
 		listField: fields,
-	}
+	}, nil
 }
 
-func (self *TempModel) ToCode() string {
-	return fmt.Sprintf(template,
-		self.className,
-		self.genFieldDef(),
-		self.genConstructFun(),
-		self.genCopyWithFun(),
-		self.genToStringFun(),
-		self.genOptEquFun(),
-		self.genHashCodeFun(),
-		self.genFromMapFun(),
-		self.genToJsonFun(),
-		self.genToMapFun(),
-	)
+func (self *TempModel) ToCode() (string, error) {
+	build := strings.Builder{}
+	if err := self.Execute(&build, map[string]any{
+		"ClassName": self.className,
+		"genField": func() string {
+			return self.genFieldDef()
+		},
+		"genConstruct": func() string {
+			return self.genConstructFun()
+		},
+		"genCopyWithInputFun": func() string {
+			return self.genCopyWithInputFun()
+		},
+		"genCopyWithRetFun": func() string {
+			return self.genCopyWithRtnFun()
+		},
+		"genToStringFun": func() string {
+			return self.genToStringFun()
+		},
+		"genOptEQFun": func() string {
+			return self.genOptEquFun()
+		},
+		"genHashCodeFun": func() string {
+			return self.genHashCodeFun()
+		},
+		"genFromMapFun": func() string {
+			return self.genFromMapFun()
+		},
+		"genToMapFun": func() string {
+			return self.genToMapFun()
+		},
+	}); err != nil {
+		return "", err
+	}
+
+	return build.String(), nil
 }
 
 func (self *TempModel) genFieldDef() string {
@@ -51,8 +79,7 @@ func (self *TempModel) genFieldDef() string {
 		}
 	}
 
-	return fmt.Sprintf(`%s
-`, ret)
+	return ret
 }
 
 func (self *TempModel) genConstructFun() string {
@@ -67,34 +94,37 @@ func (self *TempModel) genConstructFun() string {
 		}
 	}
 
-	return fmt.Sprintf(`%s({
-	  %s	
-   });
-`, self.className, ret)
+	return ret
 }
 
-func (self *TempModel) genCopyWithFun() string {
-	var param, ret string
+func (self *TempModel) genCopyWithInputFun() string {
+	var param string
 	for i, field := range self.listField {
 		if (i + 1) == len(self.listField) { //最后一个
 			param += fmt.Sprintf("	  %s %s ,", field.Type, field.Name)
-			ret += fmt.Sprintf("	    %s:%s ?? this.%s ,", field.Name, field.Name, field.Name)
 		} else if i == 0 {
-			param += fmt.Sprintf("	%s %s ,\n", field.Type, field.Name)
-			ret += fmt.Sprintf("	  %s:%s ?? this.%s ,\n", field.Name, field.Name, field.Name)
+			param += fmt.Sprintf("%s %s ,\n", field.Type, field.Name)
 		} else {
 			param += fmt.Sprintf("	  %s %s ,\n", field.Type, field.Name)
+		}
+	}
+
+	return param
+}
+
+func (self *TempModel) genCopyWithRtnFun() string {
+	var ret string
+	for i, field := range self.listField {
+		if (i + 1) == len(self.listField) { //最后一个
+			ret += fmt.Sprintf("	    %s:%s ?? this.%s ,", field.Name, field.Name, field.Name)
+		} else if i == 0 {
+			ret += fmt.Sprintf("%s:%s ?? this.%s ,\n", field.Name, field.Name, field.Name)
+		} else {
 			ret += fmt.Sprintf("	    %s:%s ?? this.%s ,\n", field.Name, field.Name, field.Name)
 		}
 	}
 
-	return fmt.Sprintf(` %s copyWith({
-	%s	
-  }) {
-    return new %s(
-	%s
-    );
-  }`, self.className, param, self.className, ret)
+	return ret
 }
 
 func (self *TempModel) genToStringFun() string {
@@ -108,11 +138,7 @@ func (self *TempModel) genToStringFun() string {
 
 	}
 
-	return fmt.Sprintf(`@override
-  String toString() {
-	  return '%s{%s}';
-  }
-`, self.className, ret)
+	return ret
 }
 
 func (self *TempModel) genOptEquFun() string {
@@ -121,36 +147,28 @@ func (self *TempModel) genOptEquFun() string {
 		if (i + 1) == len(self.listField) { //最后一个
 			ret += fmt.Sprintf("	  	%s == other.%s", field.Name, field.Name)
 		} else if i == 0 {
-			ret += fmt.Sprintf("	%s == other.%s && \n", field.Name, field.Name)
+			ret += fmt.Sprintf("%s == other.%s &&\n", field.Name, field.Name)
 		} else {
-			ret += fmt.Sprintf("	  	%s == other.%s && \n", field.Name, field.Name)
+			ret += fmt.Sprintf("	  	%s == other.%s &&\n", field.Name, field.Name)
 		}
 	}
 
-	return fmt.Sprintf(`@override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is %s && 
-      %s) ;
-`, self.className, ret)
+	return ret
 }
 
 func (self *TempModel) genHashCodeFun() string {
 	var ret string
 	for i, field := range self.listField {
 		if (i + 1) == len(self.listField) { //最后一个
-			ret += fmt.Sprintf("	  %s.hashCode ^", field.Name)
+			ret += fmt.Sprintf("	    %s.hashCode", field.Name)
 		} else if i == 0 {
 			ret += fmt.Sprintf("%s.hashCode ^\n", field.Name)
 		} else {
-			ret += fmt.Sprintf("	  %s.hashCode ^\n", field.Name)
+			ret += fmt.Sprintf("	 	  %s.hashCode ^\n", field.Name)
 		}
 	}
 
-	return fmt.Sprintf(`@override
-int get hashCode =>
-    %s ;
-`, ret)
+	return ret
 }
 
 func (self *TempModel) genFromMapFun() string {
@@ -159,18 +177,13 @@ func (self *TempModel) genFromMapFun() string {
 		if (i + 1) == len(self.listField) { //最后一个
 			ret += fmt.Sprintf("	    %s: map['%s'] as  %s,", field.Name, field.Name, field.Type)
 		} else if i == 0 {
-			ret += fmt.Sprintf("	%s: map['%s'] as  %s,\n", field.Name, field.Name, field.Type)
+			ret += fmt.Sprintf("%s: map['%s'] as  %s,\n", field.Name, field.Name, field.Type)
 		} else {
 			ret += fmt.Sprintf("	    %s: map['%s'] as  %s,\n", field.Name, field.Name, field.Type)
 		}
 	}
 
-	return fmt.Sprintf(`factory %s.fromMap(Map<String?, dynamic> map) {
-    return new %s(
-    %s 
-	);
- }
-`, self.className, self.className, ret)
+	return ret
 }
 
 func (self *TempModel) genToJsonFun() string {
@@ -190,44 +203,5 @@ func (self *TempModel) genToMapFun() string {
 
 	}
 
-	return fmt.Sprintf(`Map<String, dynamic> toMap() {
-    // ignore: unnecessary_cast
-   return {
-      %s
-     } as Map<String, dynamic>;
-  }
-`, ret)
+	return ret
 }
-
-const template = `
-import 'dart:convert';
-
-class %s {
-  //field define 
-  %s
-
- //construct function 
-  %s
-
- //copyWith function
- %s
-
-//toString function
- %s
-
-//operation == function
- %s
-
-//get hasCode function
-%s
-
-//fromMap function
-%s
-
-//toJson function
-%s
-
-//toMap function
-%s
-}
-`
