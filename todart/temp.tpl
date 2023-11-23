@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 class {{.ClassName}} {
   //Field Define
@@ -12,14 +11,14 @@ class {{.ClassName}} {
   {{.ClassName}} copyWith({
     {{call .genCopyWithInputFun}}
   }) {
-    return new {{.ClassName}}(
+    return {{.ClassName}}(
       {{call .genCopyWithRetFun}}
     );
   }
 
   String toJson() => json.encode(toMap());
 
-  factory Dict.fromJson(String source) => Dict.fromMap(json.decode(source));
+  factory {{.ClassName}}.fromJson(source) => {{.ClassName}}.fromMap(json.decode(source)) ;
 
   @override
   String toString() {
@@ -37,7 +36,7 @@ class {{.ClassName}} {
       {{call .genHashCodeFun}};
 
   factory {{.ClassName}}.fromMap(Map<String?, dynamic> map) {
-    return new Article(
+    return {{.ClassName}}(
       {{call .genFromMapFun}}
     );
   }

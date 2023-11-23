@@ -3,6 +3,7 @@ package todart
 import (
 	_ "embed"
 	"fmt"
+	"github.com/any-call/gobase/util/mycond"
 	"strings"
 	"text/template"
 )
@@ -131,9 +132,9 @@ func (self *TempModel) genToStringFun() string {
 	var ret string
 	for i, field := range self.listField {
 		if (i + 1) == len(self.listField) {
-			ret += fmt.Sprintf("%s: $%s", field.Name, field.Name)
+			ret += fmt.Sprintf("%s: $%s", field.Key, field.Name)
 		} else {
-			ret += fmt.Sprintf("%s: $%s,", field.Name, field.Name)
+			ret += fmt.Sprintf("%s: $%s,", field.Key, field.Name)
 		}
 
 	}
@@ -175,15 +176,43 @@ func (self *TempModel) genFromMapFun() string {
 	var ret string
 	for i, field := range self.listField {
 		if (i + 1) == len(self.listField) { //最后一个
-			ret += fmt.Sprintf("	    %s: map['%s'] as  %s,", field.Name, field.Name, field.Type)
+			ret += fmt.Sprintf("	    %s: %s", field.Name, self.FromMapFieldTemplate(field))
 		} else if i == 0 {
-			ret += fmt.Sprintf("%s: map['%s'] as  %s,\n", field.Name, field.Name, field.Type)
+			ret += fmt.Sprintf("%s: %s\n", field.Name, self.FromMapFieldTemplate(field))
 		} else {
-			ret += fmt.Sprintf("	    %s: map['%s'] as  %s,\n", field.Name, field.Name, field.Type)
+			ret += fmt.Sprintf("	    %s: %s\n", field.Name, self.FromMapFieldTemplate(field))
 		}
 	}
 
 	return ret
+}
+
+func (self *TempModel) FromMapFieldTemplate(f Field) string {
+	if strings.HasPrefix(f.Type, "List") {
+		subType := mycond.If(func() bool {
+			return f.ItemName == ""
+		}, f.GetItemValueType(), f.ItemName)
+		if subType != "" {
+			if f.ItemName != "" {
+				return fmt.Sprintf("List.from(map['%s']).map((e) => %s.fromMap(e)).toList(),", f.Key, subType)
+			} else {
+				return fmt.Sprintf("List<%s>.from(map['%s']),", subType, f.Key)
+			}
+		} else {
+			return fmt.Sprintf("List.from(map['%s']),", f.Key)
+		}
+	} else if strings.HasPrefix(f.Type, "Map") {
+		subType := mycond.If(func() bool {
+			return f.ItemName == ""
+		}, f.GetItemValueType(), f.ItemName)
+		if subType != "" {
+			return fmt.Sprintf("Map<%s>.from(map['%s']),", subType, f.Key)
+		} else {
+			return fmt.Sprintf("Map.from(map['%s']),", f.Key)
+		}
+	} else {
+		return fmt.Sprintf("map['%s'] as  %s,", f.Key, f.Type)
+	}
 }
 
 func (self *TempModel) genToJsonFun() string {
@@ -194,11 +223,11 @@ func (self *TempModel) genToMapFun() string {
 	var ret string
 	for i, field := range self.listField {
 		if (i + 1) == len(self.listField) { //最后一个
-			ret += fmt.Sprintf("      '%s': this.%s,", field.Name, field.Name)
+			ret += fmt.Sprintf("      '%s': this.%s,", field.Key, field.Name)
 		} else if i == 0 {
-			ret += fmt.Sprintf("'%s': this.%s,\n", field.Name, field.Name)
+			ret += fmt.Sprintf("'%s': this.%s,\n", field.Key, field.Name)
 		} else {
-			ret += fmt.Sprintf("      '%s': this.%s,\n", field.Name, field.Name)
+			ret += fmt.Sprintf("      '%s': this.%s,\n", field.Key, field.Name)
 		}
 
 	}
