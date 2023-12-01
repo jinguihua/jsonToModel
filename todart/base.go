@@ -66,7 +66,7 @@ func (self *Field) GetItemValueType() string {
 	return ""
 }
 
-func fieldToClass(clsName string, listField []myjson.FieldValue) []Class {
+func FieldToClass(clsName string, listField []myjson.FieldValue) []Class {
 	var listClass = make([]Class, 0)
 
 	if listField == nil || len(listField) == 0 {
@@ -151,7 +151,7 @@ func fieldToClass(clsName string, listField []myjson.FieldValue) []Class {
 					if field.ItemName != "" { //说明标识有下一级的类名
 						if list, ok := mapV.Value.(myjson.OrderArray); ok && len(list) > 0 {
 							if orderMap, ok := list[0].(myjson.OrderMap); ok {
-								tempClass := fieldToClass(field.ItemName, orderMap.Fields())
+								tempClass := FieldToClass(field.ItemName, orderMap.Fields())
 								if tempClass != nil && len(tempClass) > 0 {
 									field.Type = fmt.Sprintf("List<%s>?", field.ItemName)
 									listClass = append(listClass, tempClass...)
@@ -185,7 +185,7 @@ func GenModel(destFile string, jsonStr string) error {
 	fileNameSlice := strings.Split(myos.Filename(destFile), ".")
 	ClassName := fileNameSlice[0]
 
-	listClass := fieldToClass(ClassName, list)
+	listClass := FieldToClass(ClassName, list)
 	if listClass == nil || len(listClass) == 0 {
 		return fmt.Errorf("covert err")
 	}
