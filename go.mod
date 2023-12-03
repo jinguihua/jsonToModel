@@ -3,7 +3,7 @@ module github.com/jinguihua/jsonToModel
 go 1.20
 
 require (
-	github.com/any-call/gobase v1.7.6
+	github.com/any-call/gobase v1.7.9
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.17.0
