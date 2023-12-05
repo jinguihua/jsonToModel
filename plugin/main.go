@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/any-call/gobase/util/mycgo"
 	"github.com/any-call/gobase/util/myjson"
 	"github.com/any-call/gobase/util/mystr"
@@ -10,9 +11,17 @@ import (
 
 import "C"
 
+var (
+	JsonToDartResult int = 0
+)
+
 func main() {
-	aa := JsonToDart(mycgo.ToPTRChar(jsonTemp), mycgo.ToPTRChar("Article"))
-	mycgo.CPrintln(aa)
+	ret := JsonToDart(mycgo.ToPTRChar(jsonTemp), mycgo.ToPTRChar("Article"))
+	result := getLastResult()
+	fmt.Println("get run result :", result)
+	if result != 0 {
+		mycgo.CPrintln(ret)
+	}
 }
 
 // 将json 转成 dart 模型
@@ -20,16 +29,19 @@ func JsonToDart(cjson mycgo.PtrChar, clsName mycgo.PtrChar) mycgo.PtrChar {
 	json := mycgo.ToString(cjson) //C.GoString(cjson)
 	className := mycgo.ToString(clsName)
 	if len(className) == 0 {
+		JsonToDartResult = -1
 		return mycgo.ToPTRChar("入参类别不能为空")
 	}
 
 	list, err := myjson.ToOrderMap(json)
 	if err != nil {
+		JsonToDartResult = -1
 		return mycgo.ToPTRChar(err.Error())
 	}
 
 	listClass := todart.FieldToClass(className, list)
 	if listClass == nil || len(listClass) == 0 {
+		JsonToDartResult = -1
 		return mycgo.ToPTRChar("convert err")
 	}
 
@@ -40,11 +52,13 @@ func JsonToDart(cjson mycgo.PtrChar, clsName mycgo.PtrChar) mycgo.PtrChar {
 		classInfo := listClass[i]
 		dartModel, err := todart.NewTempModel(mystr.ToFirstUpper(classInfo.Name), classInfo.Fields)
 		if err != nil {
+			JsonToDartResult = -1
 			return mycgo.ToPTRChar(err.Error())
 		}
 
 		dartInfo, err := dartModel.ToCode()
 		if err != nil {
+			JsonToDartResult = -1
 			return mycgo.ToPTRChar(err.Error())
 		}
 
@@ -52,7 +66,12 @@ func JsonToDart(cjson mycgo.PtrChar, clsName mycgo.PtrChar) mycgo.PtrChar {
 		m++
 	}
 
+	JsonToDartResult = 0
 	return mycgo.ToPTRChar(strings.Join(listDartInfo, "\r\n\r\n"))
+}
+
+func getLastResult() int {
+	return JsonToDartResult
 }
 
 const jsonTemp = `
