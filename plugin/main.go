@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/any-call/gobase/util/mycgo"
 	"github.com/any-call/gobase/util/myjson"
 	"github.com/any-call/gobase/util/mystr"
 	"github.com/jinguihua/jsonToModel/todart"
@@ -15,34 +14,38 @@ var (
 	JsonToDartResult int = 0
 )
 
-func main() {
-	ret := JsonToDart(mycgo.ToPTRChar(jsonTemp), mycgo.ToPTRChar("Article"))
-	result := getLastResult()
-	fmt.Println("get run result :", result)
-	if result != 0 {
-		mycgo.CPrintln(ret)
-	}
+func init() {
+	fmt.Println("enter init plugin")
 }
 
-// 将json 转成 dart 模型
-func JsonToDart(cjson mycgo.PtrChar, clsName mycgo.PtrChar) mycgo.PtrChar {
-	json := mycgo.ToString(cjson) //C.GoString(cjson)
-	className := mycgo.ToString(clsName)
+func main() {
+	//ret := JsonToDart(C.CString(jsonTemp), C.CString("Article"))
+	//result := getLastResult()
+	//fmt.Println("get run result :", result)
+	//if result != 0 {
+	//	fmt.Println("ret is :", C.GoString(ret))
+	//}
+}
+
+//export JsonToDart
+func JsonToDart(cjson *C.char, clsName *C.char) *C.char {
+	json := C.GoString(cjson)
+	className := C.GoString(clsName)
 	if len(className) == 0 {
 		JsonToDartResult = -1
-		return mycgo.ToPTRChar("入参类别不能为空")
+		return C.CString("入参类别不能为空")
 	}
 
 	list, err := myjson.ToOrderMap(json)
 	if err != nil {
 		JsonToDartResult = -1
-		return mycgo.ToPTRChar(err.Error())
+		return C.CString(err.Error())
 	}
 
 	listClass := todart.FieldToClass(className, list)
 	if listClass == nil || len(listClass) == 0 {
 		JsonToDartResult = -1
-		return mycgo.ToPTRChar("convert err")
+		return C.CString("convert err")
 	}
 
 	listDartInfo := make([]string, len(listClass)+1)
@@ -53,13 +56,13 @@ func JsonToDart(cjson mycgo.PtrChar, clsName mycgo.PtrChar) mycgo.PtrChar {
 		dartModel, err := todart.NewTempModel(mystr.ToFirstUpper(classInfo.Name), classInfo.Fields)
 		if err != nil {
 			JsonToDartResult = -1
-			return mycgo.ToPTRChar(err.Error())
+			return C.CString(err.Error())
 		}
 
 		dartInfo, err := dartModel.ToCode()
 		if err != nil {
 			JsonToDartResult = -1
-			return mycgo.ToPTRChar(err.Error())
+			return C.CString(err.Error())
 		}
 
 		listDartInfo[m] = dartInfo
@@ -67,9 +70,10 @@ func JsonToDart(cjson mycgo.PtrChar, clsName mycgo.PtrChar) mycgo.PtrChar {
 	}
 
 	JsonToDartResult = 0
-	return mycgo.ToPTRChar(strings.Join(listDartInfo, "\r\n\r\n"))
+	return C.CString(strings.Join(listDartInfo, "\r\n\r\n"))
 }
 
+//export getLastResult
 func getLastResult() int {
 	return JsonToDartResult
 }

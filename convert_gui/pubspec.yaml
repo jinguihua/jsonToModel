@@ -40,10 +40,18 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   file_selector: ^1.0.1
+  path: ^1.8.0
+  ffigen: ^10.0.0 #自动生成C 的对外函数引用
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+ffigen:
+  output: 'lib/binds/json_to_dart.dart'
+  headers:
+    entry-points:
+      - '/Users/luisjin/Downloads/json_to_model.h'
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -64,8 +72,7 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  assets:
-     - lib/json_to_model.so
+#  assets:
 #     - images/a_dot_burr.jpeg
 #     - images/a_dot_ham.jpeg
 
