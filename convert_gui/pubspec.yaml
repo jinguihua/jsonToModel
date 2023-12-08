@@ -39,8 +39,9 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
-  file_selector: ^1.0.1
   path: ^1.8.0
+  text_editor: ^0.4.0
+  split_view: ^3.2.1 #容器分割器
   ffigen: ^10.0.0 #自动生成C 的对外函数引用
 
 dev_dependencies:

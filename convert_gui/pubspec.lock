@@ -78,7 +78,7 @@ packages:
     description:
       path: "."
       ref: main
-      resolved-ref: "02a65e2d7aa7e6f09e99a49d8c129b82e89d8c09"
+      resolved-ref: ca7db4784007cca24e25fcca006f697e381c6898
       url: "https://github.com/any-call/dartbase.git"
     source: git
     version: "0.0.1"
@@ -123,7 +123,7 @@ packages:
     source: hosted
     version: "7.0.0"
   file_selector:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: file_selector
       sha256: "84eaf3e034d647859167d1f01cfe7b6352488f34c1b4932635012b202014c25b"
@@ -257,6 +257,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.10.0"
+  nested:
+    dependency: transitive
+    description:
+      name: nested
+      sha256: "03bac4c528c64c95c722ec99280375a6f2fc708eec17c7b3f07253b626cd2a20"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.0.0"
   package_config:
     dependency: transitive
     description:
@@ -281,6 +289,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.1.7"
+  provider:
+    dependency: transitive
+    description:
+      name: provider
+      sha256: "59471e0a4595e264625d3496af567ac85bdae1148ec985aff1e0555786f53ecf"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "5.0.0"
   quiver:
     dependency: transitive
     description:
@@ -302,6 +318,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.10.0"
+  split_view:
+    dependency: "direct main"
+    description:
+      name: split_view
+      sha256: "7ad0e1c40703901aa1175fd465dec5e965b55324f9cc8e51526479a4a96d01a4"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "3.2.1"
   stack_trace:
     dependency: transitive
     description:
@@ -342,6 +366,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.6.1"
+  text_editor:
+    dependency: "direct main"
+    description:
+      name: text_editor
+      sha256: "604e075ba98e8d2872ca8bc94d2ef52f5bfd13a464ac4bcc5858f5221de1136b"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.4.1"
   typed_data:
     dependency: transitive
     description:
